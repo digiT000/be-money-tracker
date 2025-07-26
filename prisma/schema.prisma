@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// Model for User
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique // User's email, must be unique
+  passwordHash  String         
+  name          String?        // Optional: User's name
+  refreshTokens RefreshToken[] // Relation to RefreshToken model (one-to-many)
+  emailVerified Boolean @default(false)
+  tokenEmailVerified String? // Token for email verification
+  tokenPasswordReset String? // Token for password reset
+  tokenPasswordResetExpiresAt DateTime? // Expiration time for password reset token
+  tokenEmailVerifiedExpiresAt DateTime? // Expiration time for email verification token
+  tokenEmailVerifiedCreatedAt DateTime? // Creation time for email verification token
+  tokenPasswordResetCreatedAt DateTime? // Creation time for password reset token
+  createdAt DateTime @default(now())
+  expenses Expense[] 
+  categories CategoryExpense[] 
+  owners OwnerExpnse[]
+  updatedAt     DateTime       @updatedAt
+}
+
+// Model for RefreshToken
+// This model stores refresh tokens for each user session.
+// It's crucial for managing multiple logins (e.g., from different devices)
+// and for enabling token revocation.
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique // The hashed refresh token itself
+  userId    String
+  user      User     @relation(fields: [userId], references: [id]) // Link to the User model
+  expiresAt DateTime // When this refresh token expires
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId]) // Indexing userId for faster lookups
+}
+
+
+// Model for Expense Category
+model CategoryExpense {
+  id        String    @id @default(uuid())
+  userId    String
+  name      String    
+  budgetCategory Float
+  expenses  Expense[] // Relation to the Expense model (one-to-many)
+  user      User @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Model for Expense
+model Expense {
+  id          String         @id @default(uuid())
+  userId     String
+  ownerId     String
+  amount      Float
+  description String?
+  date        DateTime       @default(now())
+  categoryId  String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  category    CategoryExpense @relation(fields: [categoryId], references: [id]) // Relation to CategoryExpense
+  user   User @relation(fields: [userId], references: [id]) 
+  ownerExpense OwnerExpnse @relation(fields: [ownerId], references: [id]) 
+
+  @@index([userId]) // Indexing userId for faster lookups
+  @@index([categoryId]) // Indexing categoryId for faster lookups
+  @@index([ownerId]) // Indexing ownerId for faster lookups
+}
+
+model OwnerExpnse{
+    id          String         @id @default(uuid())
+    name        String
+    expenses    Expense[]      // Relation to the Expense model (one-to-many)
+    createdAt   DateTime       @default(now())
+    updatedAt   DateTime       @updatedAt
+    userId      String
+    user        User @relation(fields: [userId], references: [id]) // Relation to User model
+}
+
+
+
+
+enum OwnerType{
+  HIS
+  HER
+}
