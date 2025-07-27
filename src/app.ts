@@ -3,9 +3,17 @@ import expenseRouter from './router/expense.router';
 import authRouter from './router/authentication.router';
 import categoryRouter from './router/categories.router';
 import ownerRouter from './router/owner.router';
+import cors from 'cors';
 
 const API_URL = process.env.API_URL;
 const app: Application = express();
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || '*', // Allow all origins by default
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // Allow credentials
+  })
+);
 app.use(express.json()); // Middleware to parse JSON bodies
 
 app.use(`${API_URL}/expenses`, expenseRouter);
