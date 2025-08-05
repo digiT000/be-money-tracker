@@ -9,7 +9,7 @@ export class CategoriesService {
     const user = await this.authenticationService.checkUserExists(email);
 
     if (!user) {
-      throw new ErrorHelper('User does not exist', 400);
+      throw new ErrorHelper('', 'User does not exist', 400);
     }
 
     const createCategory = await prisma.categoryExpense.create({

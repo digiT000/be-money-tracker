@@ -29,10 +29,13 @@ model User {
   tokenEmailVerifiedExpiresAt DateTime? // Expiration time for email verification token
   tokenEmailVerifiedCreatedAt DateTime? // Creation time for email verification token
   tokenPasswordResetCreatedAt DateTime? // Creation time for password reset token
+  completeOnboarding Boolean @default(false) // Indicates if the user has completed onboarding
+  completeOnboardingDate DateTime? // Date when onboarding was completed
+  dateResetExpense Int @default(25) 
   createdAt DateTime @default(now())
   expenses Expense[] 
   categories CategoryExpense[] 
-  owners OwnerExpnse[]
+  owner                         OwnerExpnse? // Changed to an optional one-to-one relation
   updatedAt     DateTime       @updatedAt
 }
 
@@ -91,8 +94,8 @@ model OwnerExpnse{
     expenses    Expense[]      // Relation to the Expense model (one-to-many)
     createdAt   DateTime       @default(now())
     updatedAt   DateTime       @updatedAt
-    userId      String
-    user        User @relation(fields: [userId], references: [id]) // Relation to User model
+    userId    String    @unique // Added unique constraint to enforce one-to-one
+    user      User      @relation(fields: [userId], references: [id]) // Relation to User model
 }
 
 

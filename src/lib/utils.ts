@@ -7,11 +7,17 @@ export function generateUnhashedToken(length = 64) {
 
 export class ErrorHelper extends Error {
   status: number;
+  errorCode: string;
 
-  constructor(message: string, status: number) {
+  constructor(errorCode: string, message: string, status: number) {
+    // errorCode
+
     super(message);
+
     this.name = 'CustomError';
     this.status = status;
+    this.errorCode = errorCode;
+
     // Set the prototype explicitly (for older TS versions)
     Object.setPrototypeOf(this, ErrorHelper.prototype);
   }

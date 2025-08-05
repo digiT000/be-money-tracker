@@ -2,13 +2,19 @@ import { v4 as uuidv4 } from 'uuid';
 import { JwttokenUtils } from '../../lib/jwtToken';
 import prisma from '../../lib/prisma';
 import bcrypt from 'bcrypt';
-import { generateUnhashedToken } from '../../lib/utils';
+import { ErrorHelper, generateUnhashedToken } from '../../lib/utils';
+import { OnboardingDataModel } from '../../interface/auth.interface';
+
+const AUTH_ERROR = {
+  USER_NOT_FOUND: 'UserNotFound',
+  USER_NOT_VERIFIED: 'UserNotVerified',
+  USER_INVALID_PASSWORD: 'UserInvalidPassword',
+};
 
 const saltRounds = 10;
 
 export interface UserModel {
   email: string;
-  name: string;
   password: string;
 }
 
@@ -28,13 +34,11 @@ export class AuthenticationService {
           data: {
             email: userData.email,
             passwordHash: hashedPassword,
-            name: userData.name,
           },
         });
         return {
           id: createUser.id,
           email: createUser.email,
-          name: createUser.name,
           emailVerified: createUser.emailVerified,
           createdAt: createUser.createdAt,
         };
@@ -117,15 +121,27 @@ export class AuthenticationService {
     const user = await this.checkUserExists(email);
 
     if (!user) {
-      throw new Error('User does not exist');
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_NOT_FOUND,
+        'User does not exist',
+        404
+      );
     }
     if (!user.emailVerified) {
-      throw new Error('User email is not verified');
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_NOT_VERIFIED,
+        'Your email is not verified yet',
+        404
+      );
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      throw new Error('Invalid password');
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_INVALID_PASSWORD,
+        'Invalid password',
+        404
+      );
     }
 
     const idToken = uuidv4(); // Generate a unique ID for the refresh token
@@ -155,6 +171,7 @@ export class AuthenticationService {
         email: user.email,
         name: user.name,
         isVerified: user.emailVerified,
+        isCompleteOnboarding: user.completeOnboarding,
       },
     };
   }
@@ -172,6 +189,8 @@ export class AuthenticationService {
           select: {
             email: true,
             emailVerified: true,
+            name: true,
+            completeOnboarding: true,
           },
         },
       },
@@ -198,7 +217,15 @@ export class AuthenticationService {
       refreshTokenRecord.user.emailVerified,
       refreshTokenRecord.user.email
     );
-    return accessToken;
+    return {
+      accessToken: accessToken,
+      user: {
+        email: refreshTokenRecord.user.email,
+        name: refreshTokenRecord.user.name,
+        isVerified: refreshTokenRecord.user.emailVerified,
+        isCompleteOnboarding: refreshTokenRecord.user.completeOnboarding,
+      },
+    };
   }
 
   async checkUserExists(email: string) {
@@ -208,4 +235,66 @@ export class AuthenticationService {
       },
     });
   }
+
+  // TODO : Validate token and return user detail for frontend needed
+  async validateUser(email: string) {
+    const user = await this.checkUserExists(email);
+    if (!user) {
+      throw new ErrorHelper('', 'User does not exist', 404);
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      emailVerified: user.emailVerified,
+      completeOnboarding: user.completeOnboarding,
+    };
+  }
+
+  async onboardingSubmission(
+    email: string,
+    dataOnboarding: OnboardingDataModel
+  ) {
+    const user = await this.checkUserExists(email);
+    if (!user) {
+      throw new ErrorHelper('', 'User does not exist', 404);
+    }
+
+    // make it as transaction, updating user onboarding and create new owner
+    try {
+      await prisma.$transaction(async (prisma) => {
+        await prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            name: dataOnboarding.user,
+            completeOnboarding: true,
+            completeOnboardingDate: new Date(),
+            dateResetExpense: dataOnboarding.dateReset,
+          },
+        });
+
+        await prisma.ownerExpnse.create({
+          data: {
+            name: dataOnboarding.partner,
+            userId: user.id,
+          },
+        });
+      });
+
+      return {
+        id: user.id,
+        email: user.email,
+        completeOnboarding: user.completeOnboarding,
+      };
+    } catch (error) {
+      console.error(error);
+      throw new ErrorHelper('', `An error occurred ${error}`, 500);
+    }
+  }
+
+  // TODO: Implement logout functionality
+
+  //TODO: IMPLEMENT ONBOARDING SUBMISSION
 }

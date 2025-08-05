@@ -17,7 +17,7 @@ export class ExpenseService {
     try {
       const checkUser = await this.authenticationService.checkUserExists(email);
       if (!checkUser) {
-        throw new ErrorHelper('User does not exist', 401);
+        throw new ErrorHelper('', 'User does not exist', 401);
       }
 
       // Create Expense
@@ -50,7 +50,7 @@ export class ExpenseService {
       };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
-        throw new ErrorHelper(`Expense not created :${error.message}`, 400);
+        throw new ErrorHelper('', `Expense not created :${error.message}`, 400);
       } else if (error instanceof ErrorHelper) {
         throw error;
       }
@@ -67,7 +67,7 @@ export class ExpenseService {
     try {
       const checkUser = await this.authenticationService.checkUserExists(email);
       if (!checkUser) {
-        throw new ErrorHelper('User does not exist', 401);
+        throw new ErrorHelper('', 'User does not exist', 401);
       }
 
       const whereConditions: FilterExpense = {};
@@ -125,11 +125,15 @@ export class ExpenseService {
       return { data: expenses || [], nextCursor };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
-        throw new ErrorHelper(`Error fetching expenses: ${error.message}`, 400);
+        throw new ErrorHelper(
+          '',
+          `Error fetching expenses: ${error.message}`,
+          400
+        );
       } else if (error instanceof ErrorHelper) {
         throw error;
       }
-      throw new ErrorHelper('An unexpected error occurred', 500);
+      throw new ErrorHelper('', 'An unexpected error occurred', 500);
     }
   }
 
@@ -137,7 +141,7 @@ export class ExpenseService {
     try {
       const checkUser = await this.authenticationService.checkUserExists(email);
       if (!checkUser) {
-        throw new ErrorHelper('User does not exist', 401);
+        throw new ErrorHelper('', 'User does not exist', 401);
       }
 
       // Check if the expense exists and belongs to the user
@@ -150,6 +154,7 @@ export class ExpenseService {
 
       if (!expense) {
         throw new ErrorHelper(
+          '',
           'Expense not found or does not belong to user',
           404
         );
@@ -165,7 +170,11 @@ export class ExpenseService {
       return { message: 'Expense deleted successfully' };
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
-        throw new ErrorHelper(`Error deleting expense: ${error.message}`, 400);
+        throw new ErrorHelper(
+          '',
+          `Error deleting expense: ${error.message}`,
+          400
+        );
       } else if (error instanceof ErrorHelper) {
         throw error;
       }
@@ -180,7 +189,7 @@ export class ExpenseService {
     try {
       const checkUser = await this.authenticationService.checkUserExists(email);
       if (!checkUser) {
-        throw new ErrorHelper('User does not exist', 401);
+        throw new ErrorHelper('', 'User does not exist', 401);
       }
       // Check if the expense exists and belongs to the user
       const expense = await prisma.expense.findUnique({
@@ -191,6 +200,7 @@ export class ExpenseService {
       });
       if (!expense) {
         throw new ErrorHelper(
+          '',
           'Expense not found or does not belong to user',
           404
         );
@@ -235,7 +245,11 @@ export class ExpenseService {
       return updatedExpense;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
-        throw new ErrorHelper(`Error deleting expense: ${error.message}`, 400);
+        throw new ErrorHelper(
+          '',
+          `Error deleting expense: ${error.message}`,
+          400
+        );
       } else if (error instanceof ErrorHelper) {
         throw error;
       }

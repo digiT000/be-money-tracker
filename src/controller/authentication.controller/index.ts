@@ -1,20 +1,22 @@
-import { Request, Response } from 'express';
+import { Request } from '../../types/express';
+import { Response } from 'express';
 import {
   AuthenticationService,
   UserModel,
 } from '../../service/authentication.service';
 import transporter from '../../config/nodemailer';
+import { ErrorHelper } from '../../lib/utils';
+import { OnboardingDataModel } from '../../interface/auth.interface';
 
 const authenticationService = new AuthenticationService();
 
 export class AuthenticationController {
   async register(req: Request, res: Response) {
     try {
-      const { email, password, name } = req.body;
+      const { email, password } = req.body;
       const userData: UserModel = {
         email,
         password,
-        name,
       };
 
       // REGISTRATION
@@ -57,10 +59,12 @@ export class AuthenticationController {
       const refreshTokenExpiresInMs = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
       res
-        .status(200)
-        .cookie('refresh_token', loginUser.refreshToken, {
+        .cookie('session_token', loginUser.refreshToken, {
           httpOnly: true,
           maxAge: refreshTokenExpiresInMs,
+          path: '/',
+          secure: false,
+          sameSite: 'lax',
         })
         .send({
           message: 'Login successful',
@@ -68,9 +72,14 @@ export class AuthenticationController {
           user: loginUser.user,
         });
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
+      if (error instanceof ErrorHelper) {
+        res.status(error.status).json({
+          errorCode: error.errorCode,
+          message: error.message,
+          status: error.status,
+        });
       } else {
+        console.log(error);
         res.status(400).json({ error: 'An unknown error occurred' });
       }
     }
@@ -78,16 +87,17 @@ export class AuthenticationController {
 
   async generateAccesToken(req: Request, res: Response) {
     try {
-      const { refreshToken } = req.cookies;
+      console.log(req.cookies);
+      const { session_token } = req.cookies;
 
-      if (!refreshToken) {
+      if (!session_token) {
         return res.status(401).json({ error: 'Refresh token is required' });
       }
 
-      const newAccessToken =
-        await authenticationService.generateAccesToken(refreshToken);
+      const newData =
+        await authenticationService.generateAccesToken(session_token);
 
-      res.status(200).json({ accessToken: newAccessToken });
+      res.status(200).json(newData);
     } catch (error: unknown) {
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });
@@ -113,5 +123,51 @@ export class AuthenticationController {
       throw new Error('Failed to send verification email');
     }
     return { message: 'Email sent successfully' };
+  }
+
+  async validateUser(req: Request, res: Response) {
+    try {
+      const { email } = req.user as { email: string };
+      const user = await authenticationService.validateUser(email);
+      res.status(200).json(user);
+    } catch (error: unknown) {
+      if (error instanceof ErrorHelper) {
+        res.status(error.status).json({
+          errorCode: error.errorCode,
+          message: error.message,
+          status: error.status,
+        });
+      } else {
+        res.status(400).json({ error: 'An unknown error occurred' });
+      }
+    }
+  }
+
+  async onboardingSubmission(req: Request, res: Response) {
+    try {
+      const { email } = req.user as { email: string };
+      const { dateReset, partner, user } = req.body;
+      const dataOnboarding: OnboardingDataModel = {
+        dateReset,
+        partner,
+        user,
+      };
+
+      const userOnboarding = await authenticationService.onboardingSubmission(
+        email,
+        dataOnboarding
+      );
+      res.status(200).json(userOnboarding);
+    } catch (error: unknown) {
+      if (error instanceof ErrorHelper) {
+        res.status(error.status).json({
+          errorCode: error.errorCode,
+          message: error.message,
+          status: error.status,
+        });
+      } else {
+        res.status(400).json({ error: 'An unknown error occurred' });
+      }
+    }
   }
 }
