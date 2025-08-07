@@ -35,7 +35,7 @@ model User {
   createdAt DateTime @default(now())
   expenses Expense[] 
   categories CategoryExpense[] 
-  owner                         OwnerExpnse? // Changed to an optional one-to-one relation
+  owner      OwnerExpnse[] 
   updatedAt     DateTime       @updatedAt
 }
 
@@ -83,9 +83,9 @@ model Expense {
   user   User @relation(fields: [userId], references: [id]) 
   ownerExpense OwnerExpnse @relation(fields: [ownerId], references: [id]) 
 
-  @@index([userId]) // Indexing userId for faster lookups
-  @@index([categoryId]) // Indexing categoryId for faster lookups
-  @@index([ownerId]) // Indexing ownerId for faster lookups
+  @@index([userId]) 
+  @@index([categoryId]) 
+  @@index([ownerId]) 
 }
 
 model OwnerExpnse{
@@ -94,7 +94,9 @@ model OwnerExpnse{
     expenses    Expense[]      // Relation to the Expense model (one-to-many)
     createdAt   DateTime       @default(now())
     updatedAt   DateTime       @updatedAt
-    userId    String    @unique // Added unique constraint to enforce one-to-one
+    isPrimaryUser Boolean  // Add this new field
+
+    userId    String    
     user      User      @relation(fields: [userId], references: [id]) // Relation to User model
 }
 

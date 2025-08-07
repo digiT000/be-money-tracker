@@ -13,7 +13,8 @@ export class ExpenseController {
   async createExpense(req: Request, res: Response) {
     try {
       const { email } = req.user as { email: string };
-      const { totalExpense, categoryId, description, ownerId } = req.body;
+      const { totalExpense, categoryId, description, ownerId, userId } =
+        req.body;
       const expenseData: ExpenseCreateModel = {
         categoryId,
         totalExpense,

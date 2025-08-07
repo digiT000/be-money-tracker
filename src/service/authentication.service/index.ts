@@ -226,6 +226,7 @@ export class AuthenticationService {
       user.emailVerified,
       user.email
     );
+    const partnerData = this.findPartner(user.owner);
 
     return {
       accessToken: accesToken,
@@ -235,10 +236,7 @@ export class AuthenticationService {
         name: user.name,
         isVerified: user.emailVerified,
         isCompleteOnboarding: user.completeOnboarding,
-        partner: {
-          id: user.owner?.id || null,
-          name: user.owner?.name || null,
-        },
+        partner: partnerData,
       },
     };
   }
@@ -266,6 +264,7 @@ export class AuthenticationService {
               select: {
                 id: true,
                 name: true,
+                isPrimaryUser: true,
               },
             },
           },
@@ -294,15 +293,15 @@ export class AuthenticationService {
       refreshTokenRecord.user.emailVerified,
       refreshTokenRecord.user.email
     );
+
+    const partnerData = this.findPartner(refreshTokenRecord.user.owner);
+
     return {
       accessToken: accessToken,
       user: {
         email: refreshTokenRecord.user.email,
         name: refreshTokenRecord.user.name,
-        partner: {
-          id: refreshTokenRecord.user.owner?.id,
-          name: refreshTokenRecord.user.owner?.name,
-        },
+        partner: partnerData,
         isVerified: refreshTokenRecord.user.emailVerified,
         isCompleteOnboarding: refreshTokenRecord.user.completeOnboarding,
       },
@@ -361,18 +360,27 @@ export class AuthenticationService {
             id: user.id,
           },
           data: {
-            name: dataOnboarding.user,
+            name: dataOnboarding.user, // Update the user's name
             completeOnboarding: true,
             completeOnboardingDate: new Date(),
             dateResetExpense: dataOnboarding.dateReset,
           },
         });
 
-        await prisma.ownerExpnse.create({
-          data: {
-            name: dataOnboarding.partner,
-            userId: user.id,
-          },
+        // Next, create both "payers" in a single database call
+        await prisma.ownerExpnse.createMany({
+          data: [
+            {
+              name: dataOnboarding.user,
+              userId: user.id,
+              isPrimaryUser: true,
+            },
+            {
+              name: dataOnboarding.partner,
+              userId: user.id,
+              isPrimaryUser: false,
+            },
+          ],
         });
       });
 
@@ -416,5 +424,11 @@ export class AuthenticationService {
     return {
       message: 'Logout successful',
     };
+  }
+
+  findPartner(listOwner: any) {
+    const partner = listOwner.find((user: any) => !user.isPrimaryUser);
+
+    return partner ? { id: partner.id, name: partner.name } : null; // or undefined
   }
 }
