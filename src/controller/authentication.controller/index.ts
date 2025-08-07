@@ -42,13 +42,18 @@ export class AuthenticationController {
   async verifyEmail(req: Request, res: Response) {
     try {
       const { token } = req.query;
+      console.log({ token });
       const result = await authenticationService.verifyUserEmail(
         token as string
       );
       res.status(200).json(result);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
+    } catch (error) {
+      if (error instanceof ErrorHelper) {
+        res.status(error.status).json({
+          errorCode: error.errorCode,
+          message: error.message,
+          status: error.status,
+        });
       } else {
         res.status(400).json({ error: 'An unknown error occurred' });
       }

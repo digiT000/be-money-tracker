@@ -1,4 +1,6 @@
 import jwt from 'jsonwebtoken';
+import { AUTH_ERROR } from '../service/authentication.service';
+import { ErrorHelper } from './utils';
 
 export class JwttokenUtils {
   async generateAccessToken(
@@ -51,7 +53,8 @@ export class JwttokenUtils {
       const decoded = jwt.verify(token, process.env.JWT_SECRET_EMAIL as string);
       return decoded as { email: string };
     } catch (error) {
-      throw new Error('Invalid or expired token');
+      console.log(error);
+      throw ErrorHelper.from(AUTH_ERROR.FORMAT_TOKEN_INVALID);
     }
   }
 }

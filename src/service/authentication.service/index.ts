@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import { ErrorHelper, generateUnhashedToken } from '../../lib/utils';
 import { OnboardingDataModel } from '../../interface/auth.interface';
 
-const AUTH_ERROR = {
+export const AUTH_ERROR = {
   USER_NOT_FOUND: {
     errorCode: 'AUTH_01',
     message: 'User not found',
@@ -129,8 +129,10 @@ export class AuthenticationService {
   }
 
   async verifyUserEmail(verifyToken: string) {
+    console.log({ verifyToken });
     // Check if the token matches
     const decodedEmail = await this.JwttokenUtils.verifyEmailToken(verifyToken);
+    console.log(decodedEmail);
 
     // Check if the user exists
     const user = await this.checkUserExists(decodedEmail.email);
