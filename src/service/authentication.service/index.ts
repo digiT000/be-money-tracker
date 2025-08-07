@@ -210,7 +210,7 @@ export class AuthenticationService {
     const idToken = uuidv4(); // Generate a unique ID for the refresh token
     const unhashedToken = generateUnhashedToken();
     const refreshToken = `${idToken}.${unhashedToken}`;
-    const hashedToken = await bcrypt.hash(refreshToken, saltRounds);
+    const hashedToken = await bcrypt.hash(unhashedToken, saltRounds);
 
     // if valid create refreshToken
     await prisma.refreshToken.create({
@@ -363,9 +363,36 @@ export class AuthenticationService {
       console.error(error);
       throw new ErrorHelper('', `An error occurred ${error}`, 500);
     }
+
+    // TODO: Implement logout functionality
+
+    //TODO: IMPLEMENT ONBOARDING SUBMISSION
   }
+  async logout(token: string) {
+    if (!token) {
+      return { message: 'User is already logged out.' };
+    }
 
-  // TODO: Implement logout functionality
+    const splitToken = token.split('.');
+    const idToken = splitToken[0];
 
-  //TODO: IMPLEMENT ONBOARDING SUBMISSION
+    try {
+      // Directly attempt to delete the token.
+      // This is the only action that matters for logout.
+      await prisma.refreshToken.delete({
+        where: {
+          id: idToken,
+        },
+      });
+    } catch (error) {
+      // It's good practice to handle the case where the token is already invalid.
+      // Prisma throws a P2025 error if the record to delete is not found.
+      // In this case, the user is effectively logged out, so we can ignore the error.
+      console.log(`Attempted to log out with an invalid token ID: ${idToken}`);
+    }
+
+    return {
+      message: 'Logout successful',
+    };
+  }
 }

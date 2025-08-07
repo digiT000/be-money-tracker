@@ -179,4 +179,26 @@ export class AuthenticationController {
       }
     }
   }
+
+  async logout(req: Request, res: Response) {
+    const { session_token } = req.cookies;
+    if (!session_token) {
+      return res.status(401).json({ error: 'User already logout' });
+    }
+
+    try {
+      await authenticationService.logout(session_token);
+      res.clearCookie('session_token').send('Logout successful');
+    } catch (error) {
+      if (error instanceof ErrorHelper) {
+        res.status(error.status).json({
+          errorCode: error.errorCode,
+          message: error.message,
+          status: error.status,
+        });
+      } else {
+        res.status(400).json({ error: 'An unknown error occurred' });
+      }
+    }
+  }
 }

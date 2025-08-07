@@ -40,4 +40,6 @@ authRouter.post(
   authController.onboardingSubmission.bind(authController)
 );
 
+authRouter.post('/logout', authController.logout.bind(authController));
+
 export default authRouter;
