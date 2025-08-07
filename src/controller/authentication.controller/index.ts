@@ -26,9 +26,13 @@ export class AuthenticationController {
       await this.sendingEmailVerification(email, emailToken);
 
       res.status(201).json(user);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
+    } catch (error) {
+      if (error instanceof ErrorHelper) {
+        res.status(error.status).json({
+          errorCode: error.errorCode,
+          message: error.message,
+          status: error.status,
+        });
       } else {
         res.status(400).json({ error: 'An unknown error occurred' });
       }
@@ -112,7 +116,7 @@ export class AuthenticationController {
       from: 'fareldeksano000@gmail.com',
       to: email,
       subject: 'Nodemailer Project',
-      text: `Hi from your nodemailer project, https://localhost:3000/?token=${emailToken}`,
+      text: `Hi from your nodemailer project, https://localhost:3000/email-verification?token=${emailToken}`,
     };
 
     try {

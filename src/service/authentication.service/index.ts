@@ -6,9 +6,46 @@ import { ErrorHelper, generateUnhashedToken } from '../../lib/utils';
 import { OnboardingDataModel } from '../../interface/auth.interface';
 
 const AUTH_ERROR = {
-  USER_NOT_FOUND: 'UserNotFound',
-  USER_NOT_VERIFIED: 'UserNotVerified',
-  USER_INVALID_PASSWORD: 'UserInvalidPassword',
+  USER_NOT_FOUND: {
+    errorCode: 'AUTH_01',
+    message: 'User not found',
+    status: 404,
+  },
+  USER_NOT_VERIFIED: {
+    errorCode: 'AUTH_02',
+    message: 'User not verified',
+    status: 401,
+  },
+  USER_INVALID_PASSWORD: {
+    errorCode: 'AUTH_03',
+    message: 'User invalid password',
+    status: 401,
+  },
+  USER_ALREADY_EXIST: {
+    errorCode: 'AUTH_04',
+    message: 'User already exist',
+    status: 400,
+  },
+  FAILED_CREATE: {
+    errorCode: 'AUTH_05',
+    message: 'Failed to create user',
+    status: 400,
+  },
+  USER_ALREADY_VERIFIED: {
+    errorCode: 'AUTH_06',
+    message: 'User already verified',
+    status: 400,
+  },
+  EMAIL_TOKEN_EXPIRED: {
+    errorCode: 'AUTH_07',
+    message: 'Verification token has expired',
+    status: 400,
+  },
+  FORMAT_TOKEN_INVALID: {
+    errorCode: 'AUTH_08',
+    message: 'Verification token format is invalid',
+    status: 400,
+  },
 };
 
 const saltRounds = 10;
@@ -25,7 +62,11 @@ export class AuthenticationService {
     // Check if user already exists by checking email
     const existingUser = await this.checkUserExists(userData.email);
     if (existingUser) {
-      throw new Error('User already exists');
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_ALREADY_EXIST.errorCode,
+        AUTH_ERROR.USER_ALREADY_EXIST.message,
+        AUTH_ERROR.USER_ALREADY_EXIST.status
+      );
     } else {
       const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
@@ -43,7 +84,11 @@ export class AuthenticationService {
           createdAt: createUser.createdAt,
         };
       } catch (error) {
-        throw new Error('Failed to create user');
+        throw new ErrorHelper(
+          AUTH_ERROR.FAILED_CREATE.errorCode,
+          AUTH_ERROR.FAILED_CREATE.message,
+          AUTH_ERROR.FAILED_CREATE.status
+        );
       }
     }
   }
@@ -54,10 +99,18 @@ export class AuthenticationService {
 
     const user = await this.checkUserExists(email);
     if (!user) {
-      throw new Error('User does not exist');
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_NOT_FOUND.errorCode,
+        AUTH_ERROR.USER_NOT_FOUND.message,
+        AUTH_ERROR.USER_NOT_FOUND.status
+      );
     }
     if (user.emailVerified) {
-      throw new Error('User is already verified');
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_ALREADY_VERIFIED.errorCode,
+        AUTH_ERROR.USER_ALREADY_VERIFIED.message,
+        AUTH_ERROR.USER_ALREADY_VERIFIED.status
+      );
     }
 
     const token = await this.JwttokenUtils.generateEmailToken(email);
@@ -82,12 +135,16 @@ export class AuthenticationService {
     // Check if the user exists
     const user = await this.checkUserExists(decodedEmail.email);
     if (!user) {
-      throw new Error('User does not exist');
+      throw ErrorHelper.from(AUTH_ERROR.USER_NOT_FOUND);
     }
 
     // Check if the user is already verified
     if (user.emailVerified) {
-      throw new Error('User is already verified');
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_ALREADY_VERIFIED.errorCode,
+        AUTH_ERROR.USER_ALREADY_VERIFIED.message,
+        AUTH_ERROR.USER_ALREADY_VERIFIED.status
+      );
     }
 
     // Check if the token is expired
@@ -95,7 +152,11 @@ export class AuthenticationService {
     if (tokenCreatedAt) {
       const tokenExpiresAt = new Date(tokenCreatedAt.getTime() + 3600000); // 1 hour expiration
       if (new Date() > tokenExpiresAt) {
-        throw new Error('Verification token has expired');
+        throw new ErrorHelper(
+          AUTH_ERROR.EMAIL_TOKEN_EXPIRED.errorCode,
+          AUTH_ERROR.EMAIL_TOKEN_EXPIRED.message,
+          AUTH_ERROR.EMAIL_TOKEN_EXPIRED.status
+        );
       }
     }
 
@@ -122,25 +183,25 @@ export class AuthenticationService {
 
     if (!user) {
       throw new ErrorHelper(
-        AUTH_ERROR.USER_NOT_FOUND,
-        'User does not exist',
-        404
+        AUTH_ERROR.USER_NOT_FOUND.errorCode,
+        AUTH_ERROR.USER_NOT_FOUND.message,
+        AUTH_ERROR.USER_NOT_FOUND.status
       );
     }
     if (!user.emailVerified) {
       throw new ErrorHelper(
-        AUTH_ERROR.USER_NOT_VERIFIED,
-        'Your email is not verified yet',
-        404
+        AUTH_ERROR.USER_NOT_VERIFIED.errorCode,
+        AUTH_ERROR.USER_NOT_VERIFIED.message,
+        AUTH_ERROR.USER_NOT_VERIFIED.status
       );
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       throw new ErrorHelper(
-        AUTH_ERROR.USER_INVALID_PASSWORD,
-        'Invalid password',
-        404
+        AUTH_ERROR.USER_INVALID_PASSWORD.errorCode,
+        AUTH_ERROR.USER_INVALID_PASSWORD.message,
+        AUTH_ERROR.USER_INVALID_PASSWORD.status
       );
     }
 
@@ -179,7 +240,11 @@ export class AuthenticationService {
   async generateAccesToken(refreshToken: string) {
     const [idToken, unhashedToken] = refreshToken.split('.');
     if (!idToken || !unhashedToken) {
-      throw new Error('Invalid refresh token format');
+      throw new ErrorHelper(
+        AUTH_ERROR.FORMAT_TOKEN_INVALID.errorCode,
+        AUTH_ERROR.FORMAT_TOKEN_INVALID.message,
+        AUTH_ERROR.FORMAT_TOKEN_INVALID.status
+      );
     }
 
     const refreshTokenRecord = await prisma.refreshToken.findUnique({
@@ -257,7 +322,11 @@ export class AuthenticationService {
   ) {
     const user = await this.checkUserExists(email);
     if (!user) {
-      throw new ErrorHelper('', 'User does not exist', 404);
+      throw new ErrorHelper(
+        AUTH_ERROR.USER_NOT_FOUND.errorCode,
+        AUTH_ERROR.USER_NOT_FOUND.message,
+        AUTH_ERROR.USER_NOT_FOUND.status
+      );
     }
 
     // make it as transaction, updating user onboarding and create new owner
