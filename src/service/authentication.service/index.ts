@@ -235,6 +235,10 @@ export class AuthenticationService {
         name: user.name,
         isVerified: user.emailVerified,
         isCompleteOnboarding: user.completeOnboarding,
+        partner: {
+          id: user.owner?.id || null,
+          name: user.owner?.name || null,
+        },
       },
     };
   }
@@ -258,6 +262,12 @@ export class AuthenticationService {
             emailVerified: true,
             name: true,
             completeOnboarding: true,
+            owner: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -268,7 +278,7 @@ export class AuthenticationService {
     }
 
     const isValid = await bcrypt.compare(
-      refreshToken,
+      unhashedToken,
       refreshTokenRecord.token
     );
     if (!isValid) {
@@ -289,6 +299,10 @@ export class AuthenticationService {
       user: {
         email: refreshTokenRecord.user.email,
         name: refreshTokenRecord.user.name,
+        partner: {
+          id: refreshTokenRecord.user.owner?.id,
+          name: refreshTokenRecord.user.owner?.name,
+        },
         isVerified: refreshTokenRecord.user.emailVerified,
         isCompleteOnboarding: refreshTokenRecord.user.completeOnboarding,
       },
@@ -299,6 +313,14 @@ export class AuthenticationService {
     return await prisma.user.findUnique({
       where: {
         email: email,
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
   }

@@ -75,7 +75,7 @@ export class ExpenseController {
         currentCursor
       );
       res.status(200).json({
-        data: expense,
+        expense,
       });
     } catch (error) {
       if (error instanceof ErrorHelper) {
