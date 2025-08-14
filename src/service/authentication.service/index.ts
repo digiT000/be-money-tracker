@@ -295,12 +295,14 @@ export class AuthenticationService {
     );
 
     const partnerData = this.findPartner(refreshTokenRecord.user.owner);
+    const mainPartner = this.findPartner(refreshTokenRecord.user.owner, true);
 
     return {
       accessToken: accessToken,
       user: {
         email: refreshTokenRecord.user.email,
         name: refreshTokenRecord.user.name,
+        mainPartner: mainPartner,
         partner: partnerData,
         isVerified: refreshTokenRecord.user.emailVerified,
         isCompleteOnboarding: refreshTokenRecord.user.completeOnboarding,
@@ -426,8 +428,14 @@ export class AuthenticationService {
     };
   }
 
-  findPartner(listOwner: any) {
-    const partner = listOwner.find((user: any) => !user.isPrimaryUser);
+  findPartner(listOwner: any, isMain: boolean = false) {
+    const partner = listOwner.find((user: any) => {
+      if (isMain) {
+        return user.isPrimaryUser === true;
+      } else {
+        return user.isPrimaryUser === false;
+      }
+    });
 
     return partner ? { id: partner.id, name: partner.name } : null; // or undefined
   }

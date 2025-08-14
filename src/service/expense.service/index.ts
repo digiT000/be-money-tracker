@@ -61,7 +61,7 @@ export class ExpenseService {
     email: string,
     filter: FilterExpense,
     sort: SortExpense,
-    take: number = 10,
+    take: number = 20,
     currentCursor?: string
   ) {
     try {
