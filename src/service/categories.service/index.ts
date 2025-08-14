@@ -1,3 +1,4 @@
+import { capitalizeFirstLetter } from '../../lib/capitilizeFIrstLetter';
 import prisma from '../../lib/prisma';
 import { ErrorHelper } from '../../lib/utils';
 import { AuthenticationService } from '../authentication.service';
@@ -14,7 +15,7 @@ export class CategoriesService {
 
     const createCategory = await prisma.categoryExpense.create({
       data: {
-        name: name,
+        name: capitalizeFirstLetter(name),
         budgetCategory: budgetCategory,
         userId: user.id,
       },

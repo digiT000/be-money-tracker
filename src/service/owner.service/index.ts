@@ -30,6 +30,7 @@ export class OwnerService {
         data: {
           name: name,
           userId: checkUser.id,
+          isPrimaryUser: true,
         },
       });
 
