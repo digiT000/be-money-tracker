@@ -227,6 +227,7 @@ export class AuthenticationService {
       user.email
     );
     const partnerData = this.findPartner(user.owner);
+    const mainPartner = this.findPartner(user.owner, true);
 
     return {
       accessToken: accesToken,
@@ -237,6 +238,7 @@ export class AuthenticationService {
         isVerified: user.emailVerified,
         isCompleteOnboarding: user.completeOnboarding,
         partner: partnerData,
+        mainPartner: mainPartner,
       },
     };
   }
@@ -311,15 +313,24 @@ export class AuthenticationService {
   }
 
   async checkUserExists(email: string) {
-    return await prisma.user.findUnique({
+    return prisma.user.findUnique({
       where: {
         email: email,
       },
-      include: {
+
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        name: true,
+        completeOnboarding: true,
+        passwordHash: true,
+        tokenEmailVerifiedCreatedAt: true,
         owner: {
           select: {
             id: true,
             name: true,
+            isPrimaryUser: true,
           },
         },
       },

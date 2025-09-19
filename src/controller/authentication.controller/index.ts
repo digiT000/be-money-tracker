@@ -96,7 +96,6 @@ export class AuthenticationController {
 
   async generateAccesToken(req: Request, res: Response) {
     try {
-      console.log(req.cookies);
       const { session_token } = req.cookies;
 
       if (!session_token) {
@@ -121,7 +120,7 @@ export class AuthenticationController {
       from: 'fareldeksano000@gmail.com',
       to: email,
       subject: 'Nodemailer Project',
-      text: `Hi from your nodemailer project, https://localhost:3000/email-verification?token=${emailToken}`,
+      text: `Hi from your nodemailer project, http://localhost:3000/email-verification?token=${emailToken}`,
     };
 
     try {

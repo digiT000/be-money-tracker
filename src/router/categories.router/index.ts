@@ -13,4 +13,10 @@ categoryRouter.post(
   categoryController.createCategories.bind(categoryController)
 );
 
+categoryRouter.get(
+  '/',
+  tokenMiddleware.tokenValidation.bind(tokenMiddleware),
+  categoryController.getCategories.bind(categoryController)
+);
+
 export default categoryRouter;

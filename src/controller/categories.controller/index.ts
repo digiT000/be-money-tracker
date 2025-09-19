@@ -22,4 +22,16 @@ export class CategoriesController {
       }
     }
   }
+
+  async getCategories(req: Request, res: Response) {
+    try {
+      const { email } = req.user as { email: string };
+      const categories = await this.categoriesService.getCategories(email);
+      res.status(200).json(categories);
+    } catch (error) {
+      if (error instanceof ErrorHelper) {
+        res.status(error.status).json({ error: error.message });
+      }
+    }
+  }
 }

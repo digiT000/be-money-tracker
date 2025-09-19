@@ -27,4 +27,25 @@ export class CategoriesService {
       budgetCategory: createCategory.budgetCategory,
     };
   }
+
+  async getCategories(email: string) {
+    const user = await this.authenticationService.checkUserExists(email);
+
+    if (!user) {
+      throw new ErrorHelper('', 'User does not exist', 400);
+    }
+
+    const categories = await prisma.categoryExpense.findMany({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        budgetCategory: true,
+      },
+    });
+
+    return categories;
+  }
 }
